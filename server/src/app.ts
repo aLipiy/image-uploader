@@ -9,10 +9,11 @@ dotenv.config();
 
 const server = new Server(express(), parseInt(process.env.port || ""));
 const routeList: string[] = ["/api/upload"];
-server.app.use(express.json());
+server.app.use(express.json({ limit: "50mb" }));
+server.app.use(express.urlencoded({ limit: "50mb", extended: true }));
 server.app.use(
     cors({
-        origin: `http://${process.env.host}:${process.env.port}`,
+        origin: `http://${process.env.host}:8081`
     })
 );
 new Routers(server.app, Router(), routeList);
