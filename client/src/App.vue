@@ -21,6 +21,9 @@ export default defineComponent({
   padding: 0;
   box-sizing: border-box;
 }
+:root {
+  --loaderwidth: 400px;
+}
 body {
   font-family: "Poppins", sans-serif;
   font-size: 18px;

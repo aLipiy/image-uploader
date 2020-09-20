@@ -1,46 +1,74 @@
 <template>
   <div class="wrapper">
-    <div
-      v-if="!loading"
-      class="card"
-      @drop="handleDropFileInput"
-      @dragover="handleDragStart"
-      @dragleave="handleDragEnd"
-    >
-      <div class="card-title"><span>Upload your image</span></div>
-      <div class="card-subtitle">
-        <span>File should be Jpeg, Png,...</span>
-      </div>
+    <template v-if="!loading">
+      <div
+        class="card"
+        @drop="handleFileInput"
+        @dragover="handleDragStart"
+        @dragleave="handleDragEnd"
+      >
+        <div class="done" v-if="loaded">
+          <img src="@/assets/check_circle-24px.svg" alt="" />
+        </div>
+        <div class="card-title">
+          <span>{{ title }}</span>
+        </div>
 
-      <div v-if="!loaded" class="drag-and-drop" :class="{ dragging }">
-        <img src="@/assets/image.svg" alt="" />
-        <span class="help-text">Drag & Drop your image here</span>
-      </div>
+        <template v-if="!loaded">
+          <div class="card-subtitle">
+            <span>File should be Jpeg, Png,...</span>
+          </div>
+        </template>
 
-      <div v-else class="preview-image">
-        <img :src="previewImageString" alt="" />
-      </div>
+        <template v-if="!loaded">
+          <div class="drag-and-drop" :class="{ dragging }">
+            <img src="@/assets/image.svg" alt="" />
+            <span class="help-text">Drag & Drop your image here</span>
+          </div>
+        </template>
 
-      <div class="bottom">
-        <span>Or</span>
-        <input
-          style="display:none;"
-          type="file"
-          ref="input"
-          accept=".jpeg, .png, .jpg"
-          @change="handleFileInput"
-        />
-        <button class="btn" @click="loadFile">Choose a file</button>
+        <template v-else>
+          <div class="preview-image">
+            <img :src="previewImageString" alt="" />
+          </div>
+        </template>
+
+        <div class="bottom">
+          <template v-if="!loaded">
+            <span>Or</span>
+            <input
+              style="display:none;"
+              type="file"
+              ref="input"
+              accept=".jpeg, .png, .jpg"
+              @change="handleFileInput"
+            />
+            <CommonButton button-text="Choose a file" :action="loadFile" />
+          </template>
+
+          <template v-else>
+            <div class="copy-board">
+              <input
+                @focus.prevent.stop
+                type="text"
+                readonly
+                v-model="imageLink"
+              />
+              <CommonButton button-text="Copy Link" />
+            </div>
+          </template>
+        </div>
       </div>
-    </div>
-    <Loading v-else :loading-value="loadingValue" />
+    </template>
+    <Loading v-else />
   </div>
 </template>
 
 <script lang="ts">
-import { ref, defineComponent } from "vue";
+import { ref, defineComponent, computed } from "vue";
 import axios, { AxiosResponse } from "axios";
 import Loading from "@/components/Loading.vue";
+import CommonButton from "@/components/CommonButton.vue";
 
 const apiCall = axios.create({
   baseURL: "http://localhost:8080"
@@ -56,7 +84,7 @@ interface UploadResponse {
 
 export default defineComponent({
   name: "UploadCard",
-  components: { Loading },
+  components: { Loading, CommonButton },
   setup() {
     const loaded = ref<boolean>(false);
     const loading = ref<boolean>(false);
@@ -65,6 +93,7 @@ export default defineComponent({
     const fileList = ref<Array<File>>([]);
     const input = ref<HTMLInputElement | null>(null);
     const previewImageString = ref<string | ArrayBuffer | null>(null);
+    const imageLink = ref("");
 
     const setPreviewImage = () => {
       const reader = new FileReader();
@@ -119,31 +148,26 @@ export default defineComponent({
         input.value.click();
       }
     };
-    const handleDropFileInput = async (e: DragEvent) => {
-      checkFilesExist();
-      dragging.value = false;
-      if (e.dataTransfer) {
-        const droppedFiled = e.dataTransfer.files;
-        if (
-          [...droppedFiled][0].type === "image/jpg" ||
-          [...droppedFiled][0].type === "image/png" ||
-          [...droppedFiled][0].type === "image/jpeg"
-        ) {
-          fileList.value.push([...droppedFiled][0]);
-        }
+
+    const handleFileInput = async (e: HTMLInputEvent | DragEvent) => {
+      let droppedFiles: FileList | [] = [];
+      if (e instanceof DragEvent) {
+        if (e.dataTransfer) droppedFiles = e.dataTransfer.files;
+      } else {
+        if (e.target.files) droppedFiles = e.target.files;
+      }
+      if (
+        ([...droppedFiles][0].type === "image/jpg" ||
+          [...droppedFiles][0].type === "image/png" ||
+          [...droppedFiles][0].type === "image/jpeg") &&
+        droppedFiles.length
+      ) {
+        checkFilesExist();
+        fileList.value.push([...droppedFiles][0]);
         await sendFile();
       }
     };
-    const handleFileInput = async (e: HTMLInputEvent) => {
-      checkFilesExist();
-      const files: FileList | null = e.target.files;
-      if (files && files.length) {
-        [...files].forEach((f: File) => {
-          fileList.value.push(f);
-        });
-        await sendFile();
-      }
-    };
+
     const handleDragStart = () => {
       dragging.value = true;
     };
@@ -151,9 +175,12 @@ export default defineComponent({
       dragging.value = false;
     };
 
+    const title = computed(() => {
+      return loaded.value ? "Uploaded Successfully!" : "Upload your image";
+    });
+
     return {
       loadFile,
-      handleDropFileInput,
       handleFileInput,
       handleDragStart,
       handleDragEnd,
@@ -164,7 +191,9 @@ export default defineComponent({
       loaded,
       previewImageString,
       loading,
-      loadingValue
+      loadingValue,
+      title,
+      imageLink
     };
   }
 });
@@ -172,7 +201,7 @@ export default defineComponent({
 
 <style scoped lang="scss">
 .card {
-  width: 402px;
+  width: var(--loaderwidth);
   height: 469px;
   background: #fafafb;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -245,16 +274,44 @@ export default defineComponent({
     .btn {
       max-width: 110px;
       margin-top: 22px;
-      background: #2f80ed;
-      border-radius: 8px;
-      font-size: 12px;
-      line-height: 16px;
-      text-align: center;
-      letter-spacing: -0.035em;
-      color: #ffffff;
-      padding: 8px 16px;
-      &:hover {
-        cursor: pointer;
+    }
+    .copy-board {
+      position: relative;
+      width: 100%;
+      height: 34px;
+      input {
+        user-select: none;
+        pointer-events: none;
+        position: absolute;
+        top: 0;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        font-family: "Poppins", sans-serif;
+        font-size: 8px;
+        line-height: 12px;
+        letter-spacing: -0.035em;
+        color: #4f4f4f;
+        padding: 11px 97px 11px 13px;
+        background: #f6f8fb;
+        width: calc(var(--loaderwidth) - 32px * 2);
+        height: 100%;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        &:focus {
+          outline: none;
+        }
+      }
+      .btn {
+        position: absolute;
+        top: 2px;
+        bottom: 2px;
+        right: 2px;
+        width: 74px;
+        font-size: 8px;
+        letter-spacing: -0.035em;
+        margin-top: 0;
+        height: 30px;
       }
     }
   }
@@ -264,9 +321,20 @@ export default defineComponent({
     align-items: center;
     width: 100%;
     height: 224px;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 30px;
     img {
       object-fit: cover;
-      overflow: hidden;
+    }
+  }
+  .done {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 11px;
+    img {
+      width: 42px;
+      height: 42px;
     }
   }
 }
