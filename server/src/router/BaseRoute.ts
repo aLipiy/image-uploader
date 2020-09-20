@@ -2,13 +2,9 @@
 import { Application, Request, Response, Router, static } from "express";
 import path from "path";
 
-import AbstractRouter, { IAbstractRouter } from "./AbstractRouter";
+import AbstractRouter from "./AbstractRouter";
 
-interface IBaseRouter extends IAbstractRouter {
-    setBaseRoute(): void;
-}
-
-export default class BaseRoute extends AbstractRouter implements IBaseRouter {
+export default class BaseRoute extends AbstractRouter {
     constructor(app: Application, router: Router) {
         super(app, router);
         this.setBaseRoute();

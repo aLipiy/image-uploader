@@ -1,19 +1,17 @@
-import { Application } from "express";
+import { Application, Router } from "express";
 import { red } from "chalk";
+import Routers from "./router/Routers";
+import Database from "./Database";
 
-interface IServer {
-    readonly _app: Application;
-    readonly _port: number;
-    run(): void;
-}
+class Server {
+    _app: Application;
+    _router: Router;
+    _db: FirebaseFirestore.Firestore | null;
 
-class Server implements IServer {
-    _app;
-    _port;
-
-    constructor(app: Application, port: number) {
+    constructor(app: Application, private _port: number, router: Router) {
         this._app = app;
-        this._port = port;
+        this._router = router;
+        this._db = null;
     }
 
     get app(): Application {
@@ -32,6 +30,20 @@ class Server implements IServer {
             }
         } else {
             throw new Error("Port is not defined");
+        }
+    }
+
+    setUpRoutes(routeList: string[]): void {
+        const routers = new Routers(this._app, this._router, routeList);
+        routers.init();
+    }
+    async setUpDatabase(): Promise<any> {
+        try {
+            const database = new Database();
+            await database.init();
+            this._db = database.db;
+        } catch (e) {
+            throw new Error(e);
         }
     }
 }

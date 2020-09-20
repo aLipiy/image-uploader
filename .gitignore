@@ -5,3 +5,5 @@ server/.env
 .idea
 .git
 server/dist/.env
+server/src/image-uploader-4d006-firebase-adminsdk-f6a3q-e064548942.json
+server/dist/image-uploader-4d006-firebase-adminsdk-f6a3q-e064548942.json

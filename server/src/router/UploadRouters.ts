@@ -1,16 +1,13 @@
-import AbstractRouter, { IAbstractRouter } from "./AbstractRouter";
+import AbstractRouter from "./AbstractRouter";
 import { Application, Router, Request, Response } from "express";
 // @ts-ignore
 import multer from "multer";
 
 const upload = multer({ dest: "" }).single("image");
 
-interface IUploadRouters extends IAbstractRouter {}
-
-export default class UploadRouters extends AbstractRouter implements IUploadRouters {
+export default class UploadRouters extends AbstractRouter {
     constructor(app: Application, router: Router, route: string | undefined) {
         super(app, router, undefined, route);
-        console.log(this.route);
         if (this.route) this.setRoute(this.route);
     }
 
@@ -19,7 +16,6 @@ export default class UploadRouters extends AbstractRouter implements IUploadRout
             route,
             this._router.post("", upload, (req: Request, res: Response) => {
                 try {
-                    // @ts-ignore
                     const { file } = req;
                     console.log(file);
                     res.status(200).json({

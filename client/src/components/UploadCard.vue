@@ -70,10 +70,6 @@ import axios, { AxiosResponse } from "axios";
 import Loading from "@/components/Loading.vue";
 import CommonButton from "@/components/CommonButton.vue";
 
-const apiCall = axios.create({
-  baseURL: "http://localhost:8080"
-});
-
 interface HTMLInputEvent extends Event {
   target: HTMLInputElement & EventTarget;
 }
@@ -111,7 +107,7 @@ export default defineComponent({
           formData.append("image", f, f.name.split(" ").join("-"))
         );
         loading.value = true;
-        const res: AxiosResponse<UploadResponse> = await apiCall.post(
+        const res: AxiosResponse<UploadResponse> = await axios.post(
           "/api/upload",
           formData,
           {
